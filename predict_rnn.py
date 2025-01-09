@@ -37,7 +37,7 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     # Load model
     # model_path = os.path.join(MODELS_FOLDER, f"{table_name}_rnn_model.h5")
     
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = r"/home/runner/work/train_rnn_models" #os.path.dirname(os.path.abspath(__file__))
     print(script_dir)
     models_folder = os.path.join(script_dir, MODELS_FOLDER)    
     model_path = os.path.join(models_folder, f"{table_name}_rnn_model.h5")
