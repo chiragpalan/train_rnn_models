@@ -6,7 +6,7 @@ import tensorflow as tf
 DATABASE_PATH = "nifty50_data_v1.db"
 PREDICTIONS_FOLDER = "predictions"
 PREDICTIONS_DB = os.path.join(PREDICTIONS_FOLDER, "predictions.db")
-MODELS_FOLDER = "train_rnn_models/models"
+MODELS_FOLDER = "models"
 
 # Ensure the folder for PREDICTIONS_DB exists
 os.makedirs(PREDICTIONS_FOLDER, exist_ok=True)
