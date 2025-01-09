@@ -35,12 +35,12 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     data = data[features + ["Datetime"]]
 
     # Load model
-    # model_path = os.path.join(MODELS_FOLDER, f"{table_name}_rnn_model.h5")
+    model_path = os.path.join(MODELS_FOLDER, f"{table_name}_model.h5")
     
-    script_dir = r"/home/runner/work/train_rnn_models" #os.path.dirname(os.path.abspath(__file__))
-    print(script_dir)
-    models_folder = os.path.join(script_dir, MODELS_FOLDER)    
-    model_path = os.path.join(models_folder, f"{table_name}_model.h5")
+    # script_dir = r"/home/runner/work/train_rnn_models" #os.path.dirname(os.path.abspath(__file__))
+    # print(script_dir)
+    # models_folder = os.path.join(script_dir, MODELS_FOLDER)    
+    # model_path = os.path.join(models_folder, f"{table_name}_model.h5")
     print(os.path.exists(model_path))
     print(model_path)
     if not os.path.exists(model_path):
