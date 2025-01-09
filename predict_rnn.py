@@ -37,6 +37,7 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     # Load model
     model_path = os.path.join(MODELS_FOLDER, f"{table_name}_rnn_model.h5")
     print(model_path)
+    print(os.path.exists(model_path))
     if not os.path.exists(model_path):
         print(f"Model for table {table_name} not found. Skipping...")
         continue
