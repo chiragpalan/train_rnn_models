@@ -1,0 +1,36 @@
+name: Predict Next 12 Timestamps
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 16 * * 1-5' # Run at 4:30 PM Monday to Friday
+
+jobs:
+  predict_next_12:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tensorflow pandas numpy
+
+      - name: Run prediction script
+        run: python predict_next_12.py
+
+      - name: Commit and push predictions
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add predictions || echo "No predictions folder found."
+          git commit -m "Add prediction results for next 12 timestamps" || echo "Nothing to commit."
+          git push || echo "Nothing to push."
