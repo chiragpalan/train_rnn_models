@@ -2,6 +2,9 @@ import os
 import sqlite3
 import pandas as pd
 import tensorflow as tf
+from keras.losses import MeanSquaredError
+tf.keras.utils.get_custom_objects().update({"mse": MeanSquaredError()})
+
 
 DATABASE_PATH = "nifty50_data_v1.db"
 PREDICTIONS_FOLDER = "predictions"
@@ -47,7 +50,7 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
         print(f"Model for table {table_name} not found. Skipping...")
         continue
 
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path, custom_objects={"mse": MeanSquaredError()})
 
     # Make predictions
     X_test = data[-12:].values[:, :-1].reshape(1, 12, len(features))  # Last 12 steps for prediction
