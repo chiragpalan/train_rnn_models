@@ -53,7 +53,9 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     model = tf.keras.models.load_model(model_path, custom_objects={"mse": MeanSquaredError()})
 
     # Make predictions
-    X_test = data[-12:].values[:, :-1].reshape(1, 12, len(features))  # Last 12 steps for prediction
+    # X_test = data[-12:].values[:, :-1].reshape(1, 12, len(features))  # Last 12 steps for prediction
+    # predictions = model.predict(X_test)
+    X_test = data[-12:].values[:, :-1].astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
     predictions = model.predict(X_test)
 
     # Save predictions to a new database
