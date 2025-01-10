@@ -3,14 +3,15 @@ import sqlite3
 import pandas as pd
 import tensorflow as tf
 from keras.losses import MeanSquaredError
+from sklearn.preprocessing import MinMaxScaler
+
 tf.keras.utils.get_custom_objects().update({"mse": MeanSquaredError()})
 
 DATABASE_PATH = "nifty50_data_v1.db"
 PREDICTIONS_FOLDER = "predictions"
-PREDICTIONS_DB = os.path.join(PREDICTIONS_FOLDER, "predictions.db")
 MODELS_FOLDER = "models"
 
-# Ensure the folder for PREDICTIONS_DB exists
+# Ensure the folder for predictions exists
 os.makedirs(PREDICTIONS_FOLDER, exist_ok=True)
 
 # Connect to the database
@@ -37,10 +38,12 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     # Use Datetime as index only
     data.set_index("Datetime", inplace=True)
 
+    # Scale data
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(data[features])
+
     # Load model
     model_path = os.path.join(MODELS_FOLDER, f"{table_name}_model.h5")
-    print(os.path.exists(model_path))
-    print(model_path)
     if not os.path.exists(model_path):
         print(f"Model for table {table_name} not found. Skipping...")
         continue
@@ -48,26 +51,25 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     model = tf.keras.models.load_model(model_path, custom_objects={"mse": MeanSquaredError()})
 
     # Make predictions
-    X_test = data[-12:][features].values.astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
+    X_test = scaled_data[-12:].astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
     predictions = model.predict(X_test)
-    print(predictions)
 
-    # Adjust predictions shape if necessary
-    if predictions.shape != (12, len(features)):
-        predictions = predictions.reshape(-1, len(features))
+    # Reverse MinMax scaling
+    predictions = scaler.inverse_transform(predictions.reshape(-1, len(features)))
 
-    # Ensure predictions_df has the correct length
+    # Prepare predictions DataFrame
     predictions_df = pd.DataFrame(predictions, columns=[f"Predicted_{col}" for col in features])
-    
     predictions_df.index = data.index[-12:]
 
-    # Save predictions to a new database
-    predictions_df["Datetime"] = data.index[-12:].values
-    predictions_df["Actual"] = data[features].iloc[-12:].values.tolist()
+    # Load existing predictions if they exist
+    csv_path = os.path.join(PREDICTIONS_FOLDER, f"{table_name}_predictions.csv")
+    if os.path.exists(csv_path):
+        existing_predictions = pd.read_csv(csv_path)
+        predictions_df = pd.concat([existing_predictions, predictions_df])
 
-    with sqlite3.connect(PREDICTIONS_DB) as predictions_conn:
-        predictions_df.to_sql(table_name, predictions_conn, if_exists="replace", index=False)
+    # Save predictions to CSV
+    predictions_df.to_csv(csv_path, index_label="Datetime")
 
-print(f"Predictions database saved at {PREDICTIONS_DB}")
+print("Predictions saved to CSV files")
 
 conn.close()
