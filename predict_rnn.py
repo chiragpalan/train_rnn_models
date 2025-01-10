@@ -50,7 +50,7 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     # Make predictions
     X_test = data[-12:][features].values.astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
     predictions = model.predict(X_test)
-    print(predictions_df)
+    print(predictions)
 
     # Adjust predictions shape if necessary
     if predictions.shape != (12, len(features)):
