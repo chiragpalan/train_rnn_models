@@ -4,6 +4,7 @@ import pandas as pd
 import tensorflow as tf
 from keras.losses import MeanSquaredError
 from sklearn.preprocessing import MinMaxScaler
+import joblib  # Add this import to load the scaler
 
 tf.keras.utils.get_custom_objects().update({"mse": MeanSquaredError()})
 
@@ -38,9 +39,16 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     # Use Datetime as index only
     data.set_index("Datetime", inplace=True)
 
+    # Load scaler
+    scaler_path = os.path.join(MODELS_FOLDER, f"{table_name}_scaler.pkl")
+    if not os.path.exists(scaler_path):
+        print(f"Scaler for table {table_name} not found. Skipping...")
+        continue
+
+    scaler = joblib.load(scaler_path)
+
     # Scale data
-    scaler = MinMaxScaler()
-    scaled_data = scaler.fit_transform(data[features])
+    scaled_data = scaler.transform(data[features])
 
     # Load model
     model_path = os.path.join(MODELS_FOLDER, f"{table_name}_model.h5")
