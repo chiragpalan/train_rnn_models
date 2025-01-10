@@ -29,7 +29,7 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     data = pd.read_sql(query, conn)
 
     # Preprocess data
-    features = ["Open", "High", "Low", "Close", "Volume", "Adj_Close"]
+    features = ["Open", "High", "Low", "Close", "Volume"]
     if not all(feature in data.columns for feature in features):
         print(f"Missing required features in table {table_name}. Skipping...")
         continue
