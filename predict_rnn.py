@@ -5,7 +5,6 @@ import tensorflow as tf
 from keras.losses import MeanSquaredError
 tf.keras.utils.get_custom_objects().update({"mse": MeanSquaredError()})
 
-
 DATABASE_PATH = "nifty50_data_v1.db"
 PREDICTIONS_FOLDER = "predictions"
 PREDICTIONS_DB = os.path.join(PREDICTIONS_FOLDER, "predictions.db")
@@ -35,15 +34,11 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
         print(f"Missing required features in table {table_name}. Skipping...")
         continue
 
-    data = data[features + ["Datetime"]]
+    # Use Datetime as index only
+    data.set_index("Datetime", inplace=True)
 
     # Load model
     model_path = os.path.join(MODELS_FOLDER, f"{table_name}_model.h5")
-    
-    # script_dir = r"/home/runner/work/train_rnn_models" #os.path.dirname(os.path.abspath(__file__))
-    # print(script_dir)
-    # models_folder = os.path.join(script_dir, MODELS_FOLDER)    
-    # model_path = os.path.join(models_folder, f"{table_name}_model.h5")
     print(os.path.exists(model_path))
     print(model_path)
     if not os.path.exists(model_path):
@@ -53,15 +48,13 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     model = tf.keras.models.load_model(model_path, custom_objects={"mse": MeanSquaredError()})
 
     # Make predictions
-    # X_test = data[-12:].values[:, :-1].reshape(1, 12, len(features))  # Last 12 steps for prediction
-    # predictions = model.predict(X_test)
-    X_test = data[-12:].values[:, :-1].astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
+    X_test = data[-12:][features].values.astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
     predictions = model.predict(X_test)
 
     # Save predictions to a new database
-    predictions_df = pd.DataFrame(predictions, columns=[f"Predicted_{col}" for col in features[:-1]])
-    predictions_df["Datetime"] = data["Datetime"].iloc[-12:].values
-    predictions_df["Actual"] = data.iloc[-12:][features[:-1]].values.tolist()
+    predictions_df = pd.DataFrame(predictions, columns=[f"Predicted_{col}" for col in features])
+    predictions_df["Datetime"] = data.index[-12:].values
+    predictions_df["Actual"] = data[features].iloc[-12:].values.tolist()
 
     with sqlite3.connect(PREDICTIONS_DB) as predictions_conn:
         predictions_df.to_sql(table_name, predictions_conn, if_exists="replace", index=False)
