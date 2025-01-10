@@ -62,14 +62,14 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
     predictions_df.index = data.index[-12:]
 
     # Load existing predictions if they exist
-    csv_path = os.path.join(PREDICTIONS_FOLDER, f"{table_name}_predictions.csv")
-    if os.path.exists(csv_path):
-        existing_predictions = pd.read_csv(csv_path)
+    json_path = os.path.join(PREDICTIONS_FOLDER, f"{table_name}_predictions.json")
+    if os.path.exists(json_path):
+        existing_predictions = pd.read_json(json_path)
         predictions_df = pd.concat([existing_predictions, predictions_df])
 
-    # Save predictions to CSV
-    predictions_df.to_csv(csv_path, index_label="Datetime")
+    # Save predictions to JSON
+    predictions_df.to_json(json_path, orient='records', date_format='iso')
 
-print("Predictions saved to CSV files")
+print("Predictions saved to JSON files")
 
 conn.close()
