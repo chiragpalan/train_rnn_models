@@ -49,10 +49,10 @@ for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='tab
 
     # Make predictions
     X_test = data[-12:][features].values.astype('float32').reshape(1, 12, len(features))  # Last 12 steps for prediction
-    predictions = model.predict(X_test)
+    predictions = model.predict(X_test).transpose()
 
     # Ensure predictions_df has the correct length
-    predictions_df = pd.DataFrame(predictions[0], columns=[f"Predicted_{col}" for col in features])
+    predictions_df = pd.DataFrame(predictions, columns=[f"Predicted_{col}" for col in features])
     predictions_df.index = data.index[-12:]
 
     # Save predictions to a new database
