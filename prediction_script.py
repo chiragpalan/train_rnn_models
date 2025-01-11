@@ -75,7 +75,7 @@ conn.close()
 for table in tables['name']:
     if table != 'sqlite_sequence':
         predictions = make_predictions(table)
-        if not predictions.empty():
+        if not predictions.empty:  # Fixed the error here
             save_predictions_to_db(predictions, table)
             print(f"Predictions saved to table {table}")
 
