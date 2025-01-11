@@ -20,6 +20,7 @@ def load_data(table_name):
     print(data.head())
     conn.close()
     return data
+load_data("TCS_NS")
 
 def load_model_and_scaler(table_name):
     model_path = f"{MODELS_FOLDER}/{table_name}_model.h5"
