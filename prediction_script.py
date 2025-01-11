@@ -25,7 +25,7 @@ def load_data(table_name):
     data.drop(columns = ["dt"], inplace = True)
     conn.close()
     return data
-print(load_data("TCS_NS"))
+# print(load_data("TCS_NS"))
 
 def load_model_and_scaler(table_name):
     model_path = f"{MODELS_FOLDER}/{table_name}_model.h5"
@@ -61,6 +61,7 @@ def make_predictions(table_name):
     
     predictions = model.predict(X_test)
     predictions = scaler.inverse_transform(predictions)
+    print(predictions)
 
     prediction_df = pd.DataFrame(predictions, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
     prediction_df['Datetime'] = data['Datetime'].values[12:]
