@@ -62,7 +62,7 @@ def make_predictions(table_name):
     
     predictions = model.predict(X_test)
     predictions = scaler.inverse_transform(predictions)
-    print(predictions)
+    print("pred",predictions)
 
     prediction_df = pd.DataFrame(predictions, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
     prediction_df['Datetime'] = data['Datetime'].values[12:]
