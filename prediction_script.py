@@ -6,7 +6,7 @@ import pickle
 from tensorflow.keras.models import load_model
 
 DATABASE_PATH = "nifty50_data_v1.db"
-PREDICTION_DATABASE_PATH = "prediction.db"
+PREDICTION_FOLDER = "predictions"
 MODELS_FOLDER = "models"
 PREDICTION_DATE = "2024-01-10"
 
@@ -54,33 +54,25 @@ def make_predictions(table_name):
     result = pd.concat([actual_data, prediction_df], axis=1, keys=['Actual', 'Predicted'])
     return result
 
-def save_predictions_to_db(predictions, table_name):
-    conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
-    print(f"Saving predictions to table {table_name}")
-    predictions.to_sql(table_name, conn, if_exists='append')
-    conn.close()
-
-# Create the prediction database if it does not exist
-if not os.path.exists(PREDICTION_DATABASE_PATH):
-    conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
-    conn.execute("CREATE TABLE IF NOT EXISTS dummy (id INTEGER PRIMARY KEY)")
-    conn.close()
+def save_predictions_to_csv(predictions, table_name):
+    if not os.path.exists(PREDICTION_FOLDER):
+        os.makedirs(PREDICTION_FOLDER)
+    csv_path = os.path.join(PREDICTION_FOLDER, f"{table_name}_predictions.csv")
+    predictions.to_csv(csv_path)
+    print(f"Predictions saved to {csv_path}")
 
 # List all tables
 conn = sqlite3.connect(DATABASE_PATH)
 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
 conn.close()
 
-# Make predictions for each table and save to prediction.db
+# Make predictions for each table and save to CSV files
 for table in tables['name']:
     if table != 'sqlite_sequence':
         predictions = make_predictions(table)
-        if not predictions.empty:  # Fixed the error here
-            save_predictions_to_db(predictions, table)
+        if not predictions.empty:
+            save_predictions_to_csv(predictions, table)
             print(f"Predictions saved to table {table}")
 
-# Verify tables in prediction.db
-conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
-pred_tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
-conn.close()
-print(f"Tables in prediction.db: {pred_tables['name'].tolist()}")
+# Verify CSV files in predictions folder
+print(f"CSV files in {PREDICTION_FOLDER}: {os.listdir(PREDICTION_FOLDER)}")
