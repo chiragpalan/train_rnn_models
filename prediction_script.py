@@ -16,9 +16,13 @@ def load_data(table_name):
     query = f"SELECT * FROM {table_name}"
     data = pd.read_sql(query, conn)
     print(data.head())
-    data["date_str"] = pd.to_datetime(data["Datetime"]).strftime("%Y-%m-%d")
-    # data["date_str"] = date_str
+    data["dt"] = pd.to_datetime(data["Datetime"])
+    data["dt"] = data["dt"].dt.strftime("%Y-%m-%d")
+    data = data[data["dt] == PREDICTION_DATE]
+    # data["date_str"] = pd.to_datetime(data["Datetime"]).strftime("%Y-%m-%d")
+    # data["date_str"] = date_str     
     print(data.head())
+    data.drop(columns = ["dt"], inplace = True)
     conn.close()
     return data
 print(load_data("TCS_NS"))
