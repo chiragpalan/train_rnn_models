@@ -56,6 +56,7 @@ def make_predictions(table_name):
 
 def save_predictions_to_db(predictions, table_name):
     conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
+    print(f"Saving predictions to table {table_name}")
     predictions.to_sql(table_name, conn, if_exists='append')
     conn.close()
 
@@ -74,7 +75,7 @@ conn.close()
 for table in tables['name']:
     if table != 'sqlite_sequence':
         predictions = make_predictions(table)
-        if not predictions.empty:
+        if not predictions.empty():
             save_predictions_to_db(predictions, table)
             print(f"Predictions saved to table {table}")
 
