@@ -9,7 +9,7 @@ from tensorflow.keras.models import load_model
 DATABASE_PATH = "./nifty50_data_v1.db"
 PREDICTION_FOLDER = "./predictions"
 MODELS_FOLDER = "./models"
-PREDICTION_DATE = "2024-01-10"  # Change as needed
+PREDICTION_DATE = "2025-01-10"  # Change as needed
 
 def load_data(table_name):
     conn = sqlite3.connect(DATABASE_PATH)
