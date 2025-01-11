@@ -1,78 +1,70 @@
 import os
 import sqlite3
-import numpy as np
 import pandas as pd
-import tensorflow as tf
-from datetime import datetime, timedelta
+import numpy as np
+import pickle
+from tensorflow.keras.models import load_model
 
-# Paths
 DATABASE_PATH = "nifty50_data_v1.db"
-PREDICTIONS_FOLDER = "predictions"
-PREDICTIONS_DB = os.path.join(PREDICTIONS_FOLDER, "predictions_next_12.db")
+PREDICTION_DATABASE_PATH = "prediction.db"
 MODELS_FOLDER = "models"
+PREDICTION_DATE = "2024-01-10"
 
-# Ensure the predictions folder exists
-os.makedirs(PREDICTIONS_FOLDER, exist_ok=True)
-
-# Connect to the database
-conn = sqlite3.connect(DATABASE_PATH)
-cursor = conn.cursor()
-
-# Predict for each table in the database
-for table_name in cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall():
-    table_name = table_name[0]
-
-    if table_name == "sqlite_sequence":
-        continue
-
-    # Load data
-    query = f"SELECT * FROM {table_name} ORDER BY Datetime DESC LIMIT 12"
+def load_data(table_name):
+    conn = sqlite3.connect(DATABASE_PATH)
+    query = f"SELECT * FROM {table_name} WHERE date='{PREDICTION_DATE}'"
     data = pd.read_sql(query, conn)
+    conn.close()
+    return data
 
+def load_model_and_scaler(table_name):
+    model_path = f"{MODELS_FOLDER}/{table_name}_model.h5"
+    scaler_path = f"{MODELS_FOLDER}/{table_name}_scaler.pkl"
+    model = load_model(model_path)
+    with open(scaler_path, "rb") as f:
+        scaler = pickle.load(f)
+    return model, scaler
+
+def make_predictions(table_name):
+    data = load_data(table_name)
     if data.empty:
-        print(f"No data found in table {table_name}. Skipping...")
-        continue
+        return pd.DataFrame()  # No data for prediction date
 
-    # Preprocess data
-    features = ["Open", "High", "Low", "Close", "Volume", "Adj_Close"]
-    if not all(feature in data.columns for feature in features):
-        print(f"Missing required features in table {table_name}. Skipping...")
-        continue
+    actual_data = data[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+    if actual_data.empty:
+        return pd.DataFrame()  # No valid data for prediction
 
-    data = data[features + ["Datetime"]]
+    model, scaler = load_model_and_scaler(table_name)
+    scaled_data = scaler.transform(actual_data)
+    X_test = [scaled_data[i-12:i] for i in range(12, len(scaled_data))]
+    X_test = np.array(X_test)
+    
+    predictions = model.predict(X_test)
+    predictions = scaler.inverse_transform(predictions)
 
-    # Load the model
-    model_path = os.path.join(MODELS_FOLDER, f"{table_name}_rnn_model.h5")
-    print(model_path)
-    print(os.path.exists(model_path))
-    if not os.path.exists(model_path):
-        print(f"Model for table {table_name} not found. Skipping...")
-        continue
+    prediction_df = pd.DataFrame(predictions, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
+    prediction_df['datetime'] = PREDICTION_DATE
+    prediction_df.set_index('datetime', inplace=True)
 
-    model = tf.keras.models.load_model(model_path)
+    actual_data['datetime'] = PREDICTION_DATE
+    actual_data.set_index('datetime', inplace=True)
 
-    # Prepare data for prediction
-    X_input = data[features].values[::-1]  # Reverse order for proper time sequence
-    X_input = X_input.reshape(1, X_input.shape[0], X_input.shape[1])  # Reshape for RNN input
+    result = pd.concat([actual_data, prediction_df], axis=1, keys=['Actual', 'Predicted'])
+    return result
 
-    # Predict next 12 timestamps
-    predictions = model.predict(X_input)
-    predictions = predictions.reshape(-1, len(features))
+def save_predictions_to_db(predictions, table_name):
+    conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
+    predictions.to_sql(table_name, conn, if_exists='append')
+    conn.close()
 
-    # Generate Datetime for next 12 predictions
-    last_datetime = datetime.strptime(data["Datetime"].iloc[0], "%Y-%m-%d %H:%M:%S")
-    prediction_timestamps = [
-        last_datetime + timedelta(minutes=5 * i) for i in range(1, 13)
-    ]
-
-    # Save predictions
-    predictions_df = pd.DataFrame(
-        predictions, columns=[f"Predicted_{col}" for col in features]
-    )
-    predictions_df["Datetime"] = prediction_timestamps
-
-    with sqlite3.connect(PREDICTIONS_DB) as predictions_conn:
-        predictions_df.to_sql(table_name, predictions_conn, if_exists="replace", index=False)
-
-print(f"Predictions database saved at {PREDICTIONS_DB}")
+# List all tables
+conn = sqlite3.connect(DATABASE_PATH)
+tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
 conn.close()
+
+# Make predictions for each table and save to prediction.db
+for table in tables['name']:
+    if table != 'sqlite_sequence':
+        predictions = make_predictions(table)
+        if not predictions.empty:
+            save_predictions_to_db(predictions, table)
