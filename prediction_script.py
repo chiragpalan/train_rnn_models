@@ -19,6 +19,7 @@ def load_data(table_name):
     data["dt"] = pd.to_datetime(data["Datetime"])
     data["dt"] = data["dt"].dt.strftime("%Y-%m-%d")
     data = data[data["dt"] == PREDICTION_DATE]
+    print("tail", data.tail())
     # data["date_str"] = pd.to_datetime(data["Datetime"]).strftime("%Y-%m-%d")
     # data["date_str"] = date_str     
     print(data.head())
