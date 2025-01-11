@@ -28,10 +28,12 @@ def load_model_and_scaler(table_name):
 def make_predictions(table_name):
     data = load_data(table_name)
     if data.empty:
+        print(f"No data for prediction date in table {table_name}")
         return pd.DataFrame()  # No data for prediction date
 
     actual_data = data[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
     if actual_data.empty:
+        print(f"No valid data for prediction in table {table_name}")
         return pd.DataFrame()  # No valid data for prediction
 
     model, scaler = load_model_and_scaler(table_name)
@@ -74,3 +76,10 @@ for table in tables['name']:
         predictions = make_predictions(table)
         if not predictions.empty:
             save_predictions_to_db(predictions, table)
+            print(f"Predictions saved to table {table}")
+
+# Verify tables in prediction.db
+conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
+pred_tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
+conn.close()
+print(f"Tables in prediction.db: {pred_tables['name'].tolist()}")
