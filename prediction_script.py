@@ -57,6 +57,12 @@ def save_predictions_to_db(predictions, table_name):
     predictions.to_sql(table_name, conn, if_exists='append')
     conn.close()
 
+# Create the prediction database if it does not exist
+if not os.path.exists(PREDICTION_DATABASE_PATH):
+    conn = sqlite3.connect(PREDICTION_DATABASE_PATH)
+    conn.execute("CREATE TABLE IF NOT EXISTS dummy (id INTEGER PRIMARY KEY)")
+    conn.close()
+
 # List all tables
 conn = sqlite3.connect(DATABASE_PATH)
 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
