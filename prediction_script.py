@@ -13,8 +13,11 @@ PREDICTION_DATE = "2024-01-10"  # Change as needed
 
 def load_data(table_name):
     conn = sqlite3.connect(DATABASE_PATH)
-    query = f"SELECT * FROM {table_name} WHERE Datetime LIKE '{PREDICTION_DATE}%'"
+    query = f"SELECT * FROM {table_name}"
     data = pd.read_sql(query, conn)
+    date_str = pd.to_datetime(data["Datetime"]).tz_localize(None).strftime("%Y-%m-%d")
+    data["date_str"] = date_str
+    print(data.head())
     conn.close()
     return data
 
