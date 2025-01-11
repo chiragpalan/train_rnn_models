@@ -12,7 +12,7 @@ PREDICTION_DATE = "2024-01-10"
 
 def load_data(table_name):
     conn = sqlite3.connect(DATABASE_PATH)
-    query = f"SELECT * FROM {table_name} WHERE date='{PREDICTION_DATE}'"
+    query = f"SELECT * FROM {table_name} WHERE Datetime LIKE '{PREDICTION_DATE}%'"
     data = pd.read_sql(query, conn)
     conn.close()
     return data
@@ -43,11 +43,11 @@ def make_predictions(table_name):
     predictions = scaler.inverse_transform(predictions)
 
     prediction_df = pd.DataFrame(predictions, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
-    prediction_df['datetime'] = PREDICTION_DATE
-    prediction_df.set_index('datetime', inplace=True)
+    prediction_df['Datetime'] = data['Datetime'].values[12:]
+    prediction_df.set_index('Datetime', inplace=True)
 
-    actual_data['datetime'] = PREDICTION_DATE
-    actual_data.set_index('datetime', inplace=True)
+    actual_data['Datetime'] = data['Datetime']
+    actual_data.set_index('Datetime', inplace=True)
 
     result = pd.concat([actual_data, prediction_df], axis=1, keys=['Actual', 'Predicted'])
     return result
